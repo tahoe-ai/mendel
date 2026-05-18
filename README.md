@@ -102,3 +102,9 @@ Close the PR with the `patch-bot/wontfix` label — the bot will not re-open it 
 - GAE runtime version data is a vendored YAML at `scripts/patch_bot/runtimes/data/gae_runtimes.yaml`; refresh quarterly.
 - Real-time webhook reaction is v1.5. Today, the worst-case latency is ~6h.
 - `vault_ids`, multi-`app.yaml` monorepos, and SARIF emission are out of scope for v1.
+
+## Scaling beyond ~20 repos
+
+A scan processes target repos **serially** inside one 30-minute Cloud Run request. With the root-cause trial-bumps, a transitive-heavy repo takes a few minutes, so the practical ceiling is roughly 20 repos per scan.
+
+To scale past that, prefer **horizontal** scaling over in-process parallelism: split the targets across multiple Cloud Scheduler jobs, each invoking `/scan` for a disjoint repo subset. Each job is a separate Cloud Run request — separate container, isolated package-manager caches and memory, and Cloud Run scales out on its own. Because the subsets are disjoint, jobs never race on the same branch, so `--max-instances` can be raised. In-process `asyncio.gather` parallelism is possible but needs per-repo package-manager cache dirs and more memory (Cloud Run's `/tmp` is memory-backed), for only a ~3-4× gain — not worth it versus splitting jobs.
