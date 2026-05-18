@@ -12,7 +12,9 @@ API_ROOT = "https://api.github.com"
 
 
 class GitHubError(Exception):
-    pass
+    def __init__(self, message: str, *, status_code: int | None = None):
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class GitHubClient:
@@ -58,7 +60,10 @@ class GitHubClient:
                 await asyncio.sleep(wait)
                 continue
             if r.status_code >= 400:
-                raise GitHubError(f"{method} {path} -> {r.status_code}: {r.text[:500]}")
+                raise GitHubError(
+                    f"{method} {path} -> {r.status_code}: {r.text[:500]}",
+                    status_code=r.status_code,
+                )
             return r
         raise GitHubError(f"{method} {path} exhausted retries")
 

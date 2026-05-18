@@ -18,7 +18,7 @@ from ..analysis import (
 from ..github import advisory as advisory_mod
 from ..github import alerts as alerts_mod
 from ..github import prs as prs_mod
-from ..github.client import GitHubClient
+from ..github.client import GitHubClient, GitHubError
 from ..github.prs import LABEL_SECURITY, PullRequest
 from ..llm.anthropic_client import LLMClient, RiskInputs
 from ..llm.budget import TokenBudget
@@ -70,7 +70,25 @@ async def scan_all_targets() -> dict:
         llm = LLMClient(api_key=settings.anthropic_api_key, budget=budget)
         try:
             for target in settings.targets:
-                report = await _scan_target(settings, gh, llm, target, budget)
+                # Isolate per-repo failures — one bad repo must not abort the
+                # scan of the others.
+                try:
+                    report = await _scan_target(settings, gh, llm, target, budget)
+                except Exception as e:
+                    log.exception("scan crashed for %s", target.full_name)
+                    report = ScanReport(
+                        target=target.full_name,
+                        results=[
+                            GroupResult(
+                                package="-",
+                                ghsas=[],
+                                target_version=None,
+                                action="failed",
+                                detail=str(e)[:300],
+                            )
+                        ],
+                        budget=budget.summary(),
+                    )
                 reports.append(report)
         finally:
             await llm.aclose()
@@ -117,7 +135,27 @@ async def _scan_target(
     log.info("scan target %s", target.full_name)
     results: list[GroupResult] = []
 
-    alerts = await alerts_mod.list_alerts(gh, target, severities=settings.severity_floor)
+    try:
+        alerts = await alerts_mod.list_alerts(gh, target, severities=settings.severity_floor)
+    except GitHubError as e:
+        # A repo with Dependabot alerts disabled returns 403 — that's an
+        # expected per-repo state, not a failure. Skip it cleanly.
+        if e.status_code == 403:
+            log.info("%s: Dependabot alerts disabled — skipping", target.full_name)
+            return ScanReport(
+                target=target.full_name,
+                results=[
+                    GroupResult(
+                        package="-",
+                        ghsas=[],
+                        target_version=None,
+                        action="skipped",
+                        detail="Dependabot alerts disabled for this repository",
+                    )
+                ],
+                budget=budget.summary(),
+            )
+        raise
     if not alerts:
         return ScanReport(target=target.full_name, results=[], budget=budget.summary())
 
