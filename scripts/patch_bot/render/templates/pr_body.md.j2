@@ -1,0 +1,175 @@
+{%- macro emoji_for(verdict) -%}
+{%- if verdict == "compatible" -%}✓{%- elif verdict == "incompatible" -%}✗{%- elif verdict == "unverified" -%}⚠{%- else -%}—{%- endif -%}
+{%- endmacro -%}
+## Summary
+
+**{{ package }}**: `{{ current_version or "unknown" }}` → `{{ target_version }}`
+
+{% if advisories | length == 1 -%}
+Resolves [{{ primary.ghsa_id }}]({{ primary.html_url }}) — {{ primary.severity | upper }}{% if primary.cvss_score %}, CVSS {{ primary.cvss_score }}{% endif %}.
+{%- else -%}
+Consolidated patch resolving **{{ advisories | length }} advisories** for this package:
+{% for a in advisories %}
+- [{{ a.ghsa_id }}]({{ a.html_url }}) — {{ a.severity | upper }}{% if a.cvss_score %}, CVSS {{ a.cvss_score }}{% endif %}
+{%- endfor %}
+{%- endif %}
+{%- if risk %}
+- Bot risk verdict: **{{ risk.risk_score | upper }}** ({{ risk.bump_category }} bump, breaking-change uncertainty: {{ risk.breaking_change_uncertainty }})
+{%- endif %}
+
+{% if risk %}{{ risk.summary }}{% endif %}
+{% if root_cause %}
+> **Root-cause patch.** Dependabot flagged the transitive package(s) **{{ via_packages | join(", ") }}**, which this project does not depend on directly. The vulnerability is resolved by bumping the first-level dependency **{{ package }}** instead — a newer release of it pulls in a patched version. The Code Impact and Project Surface sections below cover `{{ package }}` (the package being changed), so review and test the feature(s) that use it.
+{% endif %}
+## CVE Details
+{% for a in advisories %}
+### {{ a.ghsa_id }} — {{ a.severity | upper }}{% if a.cvss_score %} (CVSS {{ a.cvss_score }}){% endif %}
+
+{{ a.summary }}
+
+{% if a.description -%}
+<details><summary>Full description</summary>
+
+{{ a.description }}
+
+</details>
+{%- endif %}
+{% endfor %}
+## Code Impact
+
+{% if import_sites -%}
+{{ import_sites | length }} direct import{{ "" if import_sites | length == 1 else "s" }} found:
+{% for s in import_sites[:30] %}
+- `{{ s.file }}:{{ s.line }}` — `{{ s.text }}`
+{%- endfor %}
+{% if import_sites | length > 30 %}
+… and {{ import_sites | length - 30 }} more.
+{%- endif %}
+{% else -%}
+*No direct usage found — likely a transitive dependency.*
+{%- endif %}
+
+## Project Surface
+
+- Import shape: **{{ surface.spread_or_wrapped }}** ({{ surface.direct_import_files }} file{{ "" if surface.direct_import_files == 1 else "s" }} import directly)
+{%- if surface.monkey_patch_sites %}
+- ⚠ {{ surface.monkey_patch_sites | length }} monkey-patch site{{ "" if surface.monkey_patch_sites | length == 1 else "s" }} detected:
+{%- for s in surface.monkey_patch_sites[:5] %}
+  - `{{ s.file }}:{{ s.line }}` — `{{ s.text | trim }}`
+{%- endfor %}
+{%- endif %}
+{%- if surface.uncovered_call_sites %}
+- ⚠ {{ surface.uncovered_call_sites | length }} affected call-site{{ "" if surface.uncovered_call_sites | length == 1 else "s" }} not covered by tests:
+{%- for s in surface.uncovered_call_sites[:10] %}
+  - `{{ s.file }}:{{ s.line }}`
+{%- endfor %}
+{%- endif %}
+{%- if surface.open_issues %}
+- Open issues across GitHub mentioning **{{ package }}@{{ target_version }}** — check whether other projects have reported regressions or bugs against this exact version before merging:
+{%- for i in surface.open_issues %}
+  - [{{ i.title }}]({{ i.url }}) ({{ i.reactions }} reactions)
+{%- endfor %}
+{%- endif %}
+
+{% if risk -%}
+## Risk Assessment
+
+**{{ risk.risk_score | upper }}** — {{ risk.bump_category }} bump, breaking-change uncertainty: **{{ risk.breaking_change_uncertainty }}**
+
+**Key findings:**
+{% for f in risk.key_findings %}
+- {{ f }}
+{%- endfor %}
+
+**Suggested test plan:**
+{% for t in risk.test_plan %}
+- {{ t }}
+{%- endfor %}
+{%- else -%}
+## Risk Assessment
+
+*LLM risk summary unavailable for this PR (budget exceeded or upstream error). Review the sections above manually.*
+{%- endif %}
+
+## Runtime Compatibility
+
+{{ emoji_for(runtime.verdict) }} **{{ runtime.runtime_id or "no runtime constraint detected" }}** — {{ runtime.detail }}
+
+## Upstream Changelog (current → {{ target_version }})
+
+{% if changelog.source_url -%}
+Source: {{ changelog.source_url }} · {{ changelog.commit_count }} commits between tags.
+{% else -%}
+*No upstream source repo detected for this advisory.*
+{% endif %}
+
+{% if changelog.breaking_change_signals -%}
+**Signals scanned from release notes / commit titles:**
+{% for sig in changelog.breaking_change_signals[:15] %}
+- {{ sig }}
+{%- endfor %}
+{% else -%}
+No breaking-change keywords detected in commit titles or release notes.
+{% endif %}
+
+{% if risk and risk.deprecation_to_error -%}
+**Deprecation → error in this release:**
+{% for d in risk.deprecation_to_error %}
+- {{ d }}
+{%- endfor %}
+{%- endif %}
+
+{% if risk and risk.default_changes -%}
+**Default-value changes:**
+{% for d in risk.default_changes %}
+- {{ d }}
+{%- endfor %}
+{%- endif %}
+
+{% if risk and risk.new_required_config -%}
+**Newly required config / env vars:**
+{% for c in risk.new_required_config %}
+- {{ c }}
+{%- endfor %}
+{%- endif %}
+
+## Dependency Delta
+
+{% if dep_delta.added or dep_delta.removed or dep_delta.bumped -%}
+{% if dep_delta.bumped -%}
+**Bumped transitively:**
+{% for n, old, new in dep_delta.bumped[:20] %}
+- `{{ n }}` {{ old }} → {{ new }}
+{%- endfor %}
+{% endif %}
+{% if dep_delta.added -%}
+**Added:**
+{% for n, v in dep_delta.added[:20] %}
+- `{{ n }}` {{ v }}
+{%- endfor %}
+{% endif %}
+{% if dep_delta.removed -%}
+**Removed:**
+{% for n, v in dep_delta.removed[:20] %}
+- `{{ n }}` (was {{ v }})
+{%- endfor %}
+{% endif %}
+{% else -%}
+*No transitive dependency changes — direct bump only.*
+{%- endif %}
+
+## What this PR changes
+
+{{ change_message }}
+
+Files modified:
+{% for f in changed_files %}
+- `{{ f }}`
+{%- endfor %}
+
+---
+
+<sub>Patched by patch-bot. Add the `patch-bot/wontfix` label to suppress re-opening on future scans.</sub>
+
+{% for a in advisories %}<!-- patchbot:ghsa={{ a.ghsa_id }} -->
+{% endfor %}<!-- patchbot:enrichment-v1 -->
