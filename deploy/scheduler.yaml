@@ -1,0 +1,18 @@
+# Reference for the Cloud Scheduler job that fires POST /scan every 6h.
+# This is documentation — deploy/deploy.sh creates/updates the job via gcloud,
+# not by applying this YAML. Keep the two in sync if you change the cadence.
+
+name: patch-bot-scan
+schedule: "0 */6 * * *"          # every 6h on the hour
+time_zone: "Etc/UTC"
+attempt_deadline: 1800s          # match Cloud Run timeout
+http_target:
+  http_method: POST
+  uri: ${SCAN_URL}                # set by deploy.sh from `gcloud run services describe`
+  oidc_token:
+    service_account_email: ${SCHEDULER_SA}@${PROJECT}.iam.gserviceaccount.com
+    audience: ${SCAN_URL}
+retry_config:
+  retry_count: 1
+  min_backoff_duration: 60s
+  max_backoff_duration: 300s
