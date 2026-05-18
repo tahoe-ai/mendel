@@ -1,0 +1,14 @@
+.git/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.env
+*.egg-info/
+dist/
+build/
+scripts/patch_bot/tests/
+README.md
+.patchbot.yml.example
+deploy/

@@ -1,0 +1,35 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+*.egg-info/
+dist/
+build/
+uv.lock
+
+# Claude Code working state
+.claude/
+
+# Project config that should never be committed
+config/targets.yaml
+targets.yaml
+.patchbot.yml
+
+# Secrets / credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+service-account*.json
+gcp-credentials*.json
+application_default_credentials.json
+.gcloud/
+secrets/
+**/secrets.yaml
+**/credentials.yaml
+.anthropic_key
+.github_token
