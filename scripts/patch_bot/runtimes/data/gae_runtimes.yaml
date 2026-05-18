@@ -1,0 +1,43 @@
+# Google App Engine 2nd-gen runtime compatibility matrix.
+# Manually refreshed quarterly. Sources:
+#   https://cloud.google.com/appengine/docs/standard/runtimes
+#   https://cloud.google.com/appengine/docs/standard/python3/runtime
+#   https://cloud.google.com/appengine/docs/standard/nodejs/runtime
+#
+# Each entry maps the `runtime:` field in app.yaml to:
+#   language         — "python" | "node"
+#   language_version — concrete X.Y the runtime ships with
+#   pep440           — PEP 440 specifier the package's `requires_python` must intersect (Python only)
+#   node_engine      — semver range a package's `engines.node` must allow (Node only)
+#
+# Last refresh: 2025-Q1.
+
+python311:
+  language: python
+  language_version: "3.11"
+  pep440: ">=3.11,<3.12"
+
+python312:
+  language: python
+  language_version: "3.12"
+  pep440: ">=3.12,<3.13"
+
+python313:
+  language: python
+  language_version: "3.13"
+  pep440: ">=3.13,<3.14"
+
+nodejs18:
+  language: node
+  language_version: "18"
+  node_engine: ">=18.0.0 <19.0.0"
+
+nodejs20:
+  language: node
+  language_version: "20"
+  node_engine: ">=20.0.0 <21.0.0"
+
+nodejs22:
+  language: node
+  language_version: "22"
+  node_engine: ">=22.0.0 <23.0.0"
