@@ -1,0 +1,18 @@
+# Drop this file at the root of any target repo to customize patch-bot behavior.
+# All fields are optional.
+
+# Override the PR base branch (defaults to the repo's default branch).
+# base_branch: develop
+
+# Force a runtime plugin even if app.yaml is absent.
+# runtime: gae    # or "generic"
+
+# Where to find coverage artifacts for uncovered-call-site detection.
+# Paths are relative to the repo root. Defaults: coverage.xml, lcov.info.
+# coverage_paths:
+#   - artifacts/coverage.xml
+#   - frontend/lcov.info
+
+# Packages to skip entirely (no PR, no enrichment).
+# skip_packages:
+#   - some-internal-shim

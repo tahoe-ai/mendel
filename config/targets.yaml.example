@@ -1,0 +1,12 @@
+# List the GitHub repositories the bot should scan for HIGH/CRITICAL Dependabot alerts.
+# The PAT in `patchbot-github-token` must have access to each repo with:
+#   - Dependabot alerts: read
+#   - Contents: write
+#   - Pull requests: write
+#   - Metadata: read
+#
+# Copy this file to config/targets.yaml before deploying.
+
+repos:
+  - your-org/your-repo
+  # - your-org/another-repo
