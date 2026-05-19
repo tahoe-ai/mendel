@@ -90,7 +90,7 @@ gcloud run deploy "$SERVICE" \
     --region="$REGION" \
     --service-account="${RUNTIME_SA}@${PROJECT}.iam.gserviceaccount.com" \
     --no-allow-unauthenticated \
-    --memory=2Gi --cpu=2 --timeout=1800 --max-instances=1 \
+    --memory=8Gi --cpu=2 --timeout=1800 --max-instances=1 \
     --set-secrets="PATCHBOT_GH_TOKEN=patchbot-github-token:latest,ANTHROPIC_API_KEY=patchbot-anthropic-key:latest" \
     --set-env-vars="TARGET_REPOS_SECRET=projects/${PROJECT}/secrets/patchbot-targets/versions/latest,PATCHBOT_SCHEDULER_SA=${SCHEDULER_SA}@${PROJECT}.iam.gserviceaccount.com"
 
