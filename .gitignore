@@ -8,6 +8,9 @@ dist/
 build/
 uv.lock
 
+# macOS
+.DS_Store
+
 # Claude Code working state
 .claude/
 
