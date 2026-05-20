@@ -1,6 +1,6 @@
-# patch-bot
+# Mendel
 
-A Cloud Run service that closes two gaps in Dependabot:
+Mendel is a Cloud Run service that closes two gaps in Dependabot:
 
 1. **Coverage** — pulls every open HIGH/CRITICAL Dependabot security alert across your target repos and ensures each has a PR. Enriches Dependabot's PR if it exists; opens its own if not.
 2. **Decision support** — every PR body includes CVE/CVSS context, GAE runtime compatibility check, upstream changelog diff with breaking-change signals, transitive dependency delta, project-surface analysis (monkey-patches, wrapper vs spread imports, uncovered call sites, open issues), and an LLM-generated risk summary.
