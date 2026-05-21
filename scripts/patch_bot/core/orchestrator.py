@@ -445,6 +445,36 @@ async def _handle_remediation(
     # body always describe the same package and version.
     branch = ours.head_ref if ours is not None else _branch_name(rem.bump_package, bump_version)
     before = await dependency_delta.snapshot(workdir, rem.ecosystem)
+
+    # If the base branch already has the package at or above the target, the
+    # bump is semantically a no-op — yarn classic may still emit lockfile
+    # reorder/dedup changes that look like a diff, which produces spurious
+    # PRs. Skip cleanly, and close any existing redundant PR of ours.
+    resolved_on_base = before.get(rem.bump_package.lower())
+    if resolved_on_base and _version_ge(resolved_on_base, bump_version):
+        log.info(
+            "%s already at %s on base (>= %s) — skipping",
+            rem.bump_package, resolved_on_base, bump_version,
+        )
+        if ours is not None:
+            await prs_mod.close_pr(
+                gh,
+                target,
+                ours.number,
+                f"Closing as redundant — `{rem.bump_package}` is already at "
+                f"`{resolved_on_base}` on the base branch (>= requested "
+                f"`{bump_version}`). The advisory is resolved by a sibling "
+                f"change that's already merged.",
+            )
+        return GroupResult(
+            package=rem.bump_package,
+            ghsas=ghsas,
+            target_version=bump_version,
+            action="skipped",
+            detail=f"already at {resolved_on_base} on base (>= {bump_version})",
+            pr_number=ours.number if ours else None,
+        )
+
     await create_branch(workdir, branch)
     update_result = await updater.update(workdir, rem.bump_package, bump_version)
     if not update_result.success:
